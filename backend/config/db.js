@@ -1,6 +1,4 @@
 import mysql from 'mysql2/promise';
-import sqlite3 from 'sqlite3';
-import { open } from 'sqlite';
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
@@ -24,6 +22,8 @@ function resolveSsl() {
 }
 
 async function initSqlite() {
+  const { open } = await import('sqlite');
+  const sqlite3 = (await import('sqlite3')).default;
   const dbPath = path.join(process.cwd(), 'nimbus_lending.db');
   sqliteDb = await open({
     filename: dbPath,
