@@ -16,8 +16,9 @@ function resolveSsl() {
   if (process.env.DB_SSL_CA && process.env.DB_SSL_CA.trim().length > 0) {
     return { ca: process.env.DB_SSL_CA.replace(/\\n/g, '\n') };
   }
-  if (process.env.DB_SSL_CA_PATH && fs.existsSync(process.env.DB_SSL_CA_PATH)) {
-    return { ca: fs.readFileSync(process.env.DB_SSL_CA_PATH).toString() };
+  const caPath = process.env.DB_SSL_CA_PATH ? path.resolve(process.cwd(), process.env.DB_SSL_CA_PATH) : path.resolve(process.cwd(), 'ca.pem');
+  if (fs.existsSync(caPath)) {
+    return { ca: fs.readFileSync(caPath).toString() };
   }
   return { rejectUnauthorized: false };
 }
