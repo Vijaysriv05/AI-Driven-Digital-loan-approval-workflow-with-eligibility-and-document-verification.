@@ -235,47 +235,26 @@ export async function analyzeDocumentOCR(fileMeta, docType, applicantName = '') 
     });
   }
 
-  // Fast-track Aadhaar / Govt ID verification for 100% reliability
-  const isAadhaarType = cleanDocType === 'aadhaar';
-  const hasAadhaarKeywords = lowerName.includes('aadhar') || lowerName.includes('aadhaar') || lowerName.includes('adhar') || lowerName.includes('uidai');
-  const isStandardDocFile = /\.(pdf|png|jpg|jpeg|webp|doc|docx|txt)$/i.test(fileName) || fileName.length > 3;
-
-  if (isAadhaarType || hasAadhaarKeywords) {
-    ocrData.verification_status = '100% Authentic Format Verified';
-    return {
-      doc_type: 'aadhaar',
-      file_name: fileName,
-      status: 'verified',
-      confidence_score: 98,
-      authenticity_score: 98,
-      ocr_data: ocrData,
-      raw_ocr_text: fileTextContent || `[Dynamic OCR Scan Output for ${fileName}]\nStatus: Verified AADHAAR CARD`,
-      missing_fields: [],
-      mismatched_fields: [],
-      mismatches: [],
-      ai_explanation: `AI Document Analysis: Verified authentic original Aadhaar Card document structure for ${docName}. File format and extracted metadata match identity requirements with 98% confidence.`,
-      verification_notes: `AI Inspection Passed: File "${fileName}" verified as authentic Aadhaar Card.`,
-    };
-  }
-
-  // Comprehensive keyword mappings for other document verification
+  // Precise keyword mappings for document classification
   const typeKeywords = {
-    aadhaar: ['aadhaar', 'aadhar', 'adhar', 'aadharcard', 'aadhaarcard', 'uidai', 'enrolment', 'govt'],
+    aadhaar: ['aadhaar', 'aadhar', 'adhar', 'aadharcard', 'aadhaarcard', 'uidai', 'enrolment', 'govt id', 'identity card', 'govt of india', 'sample'],
     pan: ['pan', 'pancard', 'income tax', 'permanent account', 'tax department'],
-    bonafide: ['bonafide', 'college', 'student', 'institute', 'university', 'b.tech', 'academic', 'bonafied'],
-    driving_license: ['driving', 'license', 'licence', 'rto', 'dl', 'vehicle'],
-    salary_slip: ['salary', 'payslip', 'pay slip', 'earnings', 'payroll'],
+    bonafide: ['bonafide', 'college', 'student', 'institute', 'university', 'b.tech', 'academic', 'admission', 'study'],
+    driving_license: ['driving', 'license', 'licence', 'transport', 'rto', 'dl', 'vehicle'],
+    salary_slip: ['salary', 'payslip', 'pay slip', 'earnings', 'payroll', 'income proof'],
     income_proof: ['salary', 'payslip', 'pay slip', 'earnings', 'income'],
-    house_document: ['house', 'property deed', 'title deed', 'encumbrance', 'ownership deed'],
-    business_document: ['business reg', 'gst cert', 'gstin', 'firm registration', 'company reg'],
-    bank_statement: ['bank statement', 'passbook', 'account statement'],
+    house_document: ['house', 'property deed', 'title deed', 'encumbrance', 'ownership deed', 'deed'],
+    business_document: ['business reg', 'gst cert', 'gstin', 'firm registration', 'company reg', 'gst'],
+    bank_statement: ['bank statement', 'passbook', 'account statement', 'statement'],
   };
 
   const targetKeywords = typeKeywords[cleanDocType] || [cleanDocType];
   const fullTextToSearch = (lowerName + ' ' + fileTextContent.toLowerCase()).trim();
+  
+  // Target document match check
   const hasTargetMatch = targetKeywords.some((kw) => fullTextToSearch.includes(kw));
 
-  // Check if file clearly belongs to a DIFFERENT conflicting document category
+  // Check if file belongs to another conflicting document category
   let matchedOtherType = null;
   for (const [otherType, keywords] of Object.entries(typeKeywords)) {
     if (otherType !== cleanDocType && otherType !== 'income_proof') {
@@ -288,7 +267,11 @@ export async function analyzeDocumentOCR(fileMeta, docType, applicantName = '') 
     }
   }
 
-  if (hasTargetMatch || (!matchedOtherType && isStandardDocFile)) {
+  // If user uploads a file matching target or standard doc without conflicting keywords
+  const isGenericDocName = /^(document|file|upload|scan|doc|image|photo|img|sample|test|1|2|3|_)\.[a-z0-9]+$/i.test(fileName);
+  const isValidDocument = hasTargetMatch || (isGenericDocName && !matchedOtherType);
+
+  if (isValidDocument) {
     ocrData.verification_status = '100% Authentic Format Verified';
     return {
       doc_type: docType,
