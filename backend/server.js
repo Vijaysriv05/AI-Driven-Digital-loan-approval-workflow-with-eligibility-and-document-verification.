@@ -2,6 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
+import path from 'path';
+import { fileURLToPath } from 'url';
+
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/user.js';
 import adminRoutes from './routes/admin.js';
@@ -12,6 +15,10 @@ import eligibilityRoutes from './routes/eligibility.js';
 import reportsRoutes from './routes/reports.js';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const publicPath = path.join(__dirname, 'public');
 
 const app = express();
 
@@ -24,14 +31,8 @@ app.use(
 
 app.use(express.json());
 
-// Root Route
-app.get('/', (req, res) => {
-  res.json({
-    message: 'Nimbus Lending API Running with RBAC Security',
-    version: '2.0.0',
-    status: 'Success',
-  });
-});
+// Serve static frontend files
+app.use(express.static(publicPath));
 
 // Health Check Route
 app.get('/api/health', (req, res) => {
@@ -48,7 +49,19 @@ app.use('/api/documents', documentsRoutes);
 app.use('/api/eligibility', eligibilityRoutes);
 app.use('/api/reports', reportsRoutes);
 
-// 404 Route
+// Fallback SPA routing for client-side React routes
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  res.sendFile(path.join(publicPath, 'index.html'), (err) => {
+    if (err) {
+      next();
+    }
+  });
+});
+
+// 404 Route for API requests or missing assets
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found.' });
 });

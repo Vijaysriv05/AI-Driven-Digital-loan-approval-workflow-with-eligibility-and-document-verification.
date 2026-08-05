@@ -3,7 +3,7 @@ import { FileDown, FileSpreadsheet } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import api from '../api/client';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 export default function Reports() {
   const [reports, setReports] = useState([]);
