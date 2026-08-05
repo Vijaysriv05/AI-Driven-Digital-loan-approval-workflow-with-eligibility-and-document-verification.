@@ -1,18 +1,14 @@
 services:
-  # 1. Backend Express Web Service
+  # Unified Single Docker Web Service (Frontend + Backend)
   - type: web
-    name: nimbus-lending-backend
-    env: node
+    name: nimbus-lending-app
+    runtime: docker
     region: singapore
     plan: free
-    rootDir: backend
-    buildCommand: npm install
-    startCommand: npm start
+    dockerfilePath: Dockerfile
     envVars:
-      - key: NODE_VERSION
-        value: 20.18.0
       - key: PORT
-        value: 10000
+        value: 5000
       - key: DB_HOST
         sync: false
       - key: DB_USER
@@ -28,14 +24,3 @@ services:
       - key: GROQ_API_KEY
         sync: false
 
-  # 2. Frontend React Static Site
-  - type: web
-    name: nimbus-lending-frontend
-    env: static
-    rootDir: frontend
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
